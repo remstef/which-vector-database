@@ -1,0 +1,91 @@
+##
+#
+##
+name: vdb
+
+networks:
+  net:
+    driver: bridge
+
+services:
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    ports:
+      - 6379:6379
+    volumes:
+      - ${PWD}/dockerdata/redis:/data
+    command: redis-server --databases 64 --save 60 1 --loglevel warning
+    sysctls:
+      net.core.somaxconn: 4096
+    networks:
+      net:
+  
+  rediscommander:
+    image: rediscommander/redis-commander:latest
+    restart: always
+    environment:
+      REDIS_HOSTS: local0:redis:6379:0,local1:redis:6379:1,local2:redis:6379:2,
+      HTTP_USER: root
+      HTTP_PASSWORD: root
+    ports:
+      - 8081:8081
+    networks:
+      - net
+
+  chroma:
+    image: chromadb/chroma
+    restart: always
+    ports:
+      - 8000:8000
+    environment:
+      - IS_PERSISTENT=TRUE
+      - ANONYMIZED_TELEMETRY=FALSE
+    volumes:
+      - ${PWD}/dockerdata/chroma:/chroma/chroma
+    networks:
+      net:
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    restart: always
+    #container_name: qdrant
+    ports:
+      - 6333:6333
+      - 6334:6334
+    expose:
+      - 6333
+      - 6334
+      - 6335
+    environment:
+      - QDRANT__TELEMETRY_DISABLED=TRUE
+    volumes:
+      - ${PWD}/dockerdata/qdrant:/qdrant/storage
+    networks:
+      net:
+
+  pgdb:
+    image: pgvector/pgvector:pg16
+    restart: always
+    environment:
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_USER=root
+      - POSTGRES_DB=root
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - ${PWD}/dockerdata/pgdb:/var/lib/postgresql/data
+    ports:
+      - 55432:5432
+    networks:
+      net:
+        aliases: 
+          - db
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 55433:8080
+    networks:
+      net:
