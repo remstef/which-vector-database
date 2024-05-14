@@ -9,31 +9,6 @@ networks:
 
 services:
 
-  redis:
-    image: redis:7-alpine
-    restart: always
-    ports:
-      - 6379:6379
-    volumes:
-      - ${PWD}/dockerdata/redis:/data
-    command: redis-server --databases 64 --save 60 1 --loglevel warning
-    sysctls:
-      net.core.somaxconn: 4096
-    networks:
-      net:
-  
-  rediscommander:
-    image: rediscommander/redis-commander:latest
-    restart: always
-    environment:
-      REDIS_HOSTS: local0:redis:6379:0,local1:redis:6379:1,local2:redis:6379:2,
-      HTTP_USER: root
-      HTTP_PASSWORD: root
-    ports:
-      - 8081:8081
-    networks:
-      - net
-
   chroma:
     image: chromadb/chroma
     restart: always
