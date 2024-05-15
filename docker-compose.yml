@@ -57,6 +57,68 @@ services:
         aliases: 
           - db
 
+  paradedb:
+    image: paradedb/paradedb:16-v0.7.0
+    restart: always
+    environment:
+      - POSTGRESQL_USERNAME=root
+      - POSTGRESQL_PASSWORD=root
+      - POSTGRESQL_DATABASE=root
+      - POSTGRESQL_POSTGRES_PASSWORD=root
+      - PARADEDB_TELEMETRY=false
+    volumes:
+      - ${PWD}/dockerdata/paradedb:/bitnami/postgresql
+    ports:
+      - 54322:5432
+    networks:
+      net:
+        aliases: 
+          - pdb
+
+  milvus:
+    image: milvusdb/milvus:v2.4.0
+    restart: always
+    environment:
+      - ETCD_USE_EMBED=true
+      - ETCD_DATA_DIR=/var/lib/milvus/etcd
+      - COMMON_STORAGETYPE=local
+    volumes:
+      - ${PWD}/dockerdata/milvus/data:/var/lib/milvus
+      - ${PWD}/dockerconfigs/milvus/embedEtcd.yaml:/milvus/configs/embedEtcd.yaml
+    ports:
+      - 19530:19530
+      - 9091:9091
+      - 2379:2379
+    security_opt:
+      - seccomp:unconfined
+    entrypoint: [ 'milvus', 'run', 'standalone' ]
+    healthcheck:
+      test: curl --fail http://localhost:9091/healthz || exit 1
+      interval: 30s
+      retries: 3
+      start_period: 90s
+      timeout: 20s
+    networks:
+      net:
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    ports:
+      - 6379:6379
+    volumes:
+      - ${PWD}/dockerdata/redis:/data
+    command: redis-server --databases 64 --save 60 1 --loglevel warning
+    sysctls:
+      net.core.somaxconn: 4096
+    networks:
+      net:
+  
+###
+# Administration Interfaces
+###
+
+  # for pgdb, paradedb
   adminer:
     image: adminer
     restart: always
@@ -64,3 +126,29 @@ services:
       - 55433:8080
     networks:
       net:
+
+  # for milvus
+  attu:
+    image: zilliz/attu:v2.3.10
+    restart: always
+    environment:
+      - MILVUS_URL=milvus:19530
+      - ETCD_DATA_DIR=/var/lib/
+    ports:
+      - 8008:3000
+    networks:
+      net:
+
+  # for redis
+  rediscommander:
+    image: rediscommander/redis-commander:latest
+    restart: always
+    environment:
+      REDIS_HOSTS: local0:redis:6379:0,local1:redis:6379:1,local2:redis:6379:2,
+      HTTP_USER: root
+      HTTP_PASSWORD: root
+    ports:
+      - 8081:8081
+    networks:
+      net:
+
