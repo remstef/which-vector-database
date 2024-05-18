@@ -130,6 +130,7 @@ services:
       # - ENABLE_MODULES=text2vec-cohere,text2vec-huggingface,text2vec-palm,text2vec-openai,generative-openai,generative-cohere,generative-palm,ref2vec-centroid,reranker-cohere,qna-openai
       - CLUSTER_HOSTNAME=node1
       - DISABLE_TELEMETRY=true
+      - ASYNC_INDEXING=true
     command: [ --host, 0.0.0.0, --port, '8080', --scheme, http ]
     restart: on-failure:0
   
