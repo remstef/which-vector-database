@@ -76,7 +76,7 @@ services:
           - pdb
 
   milvus:
-    image: milvusdb/milvus:v2.4.0
+    image: milvusdb/milvus:v2.4.1 # latest # v2.4.0
     restart: always
     environment:
       - ETCD_USE_EMBED=true
@@ -86,9 +86,9 @@ services:
       - ${PWD}/dockerdata/milvus/data:/var/lib/milvus
       - ${PWD}/dockerconfigs/milvus/embedEtcd.yaml:/milvus/configs/embedEtcd.yaml
     ports:
-      - 19530:19530
-      - 9091:9091
-      - 2379:2379
+      - 19530:19530 # grpc or http
+      # - 9091:9091 # metric collection, kubernetes, healtchecks
+      # - 2379:2379 # obsolete?
     security_opt:
       - seccomp:unconfined
     entrypoint: [ 'milvus', 'run', 'standalone' ]
