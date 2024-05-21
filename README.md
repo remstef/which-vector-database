@@ -24,4 +24,5 @@ Use cases:
 - TODO: search nearest neighbors
 - TODO: search vicinity threshold
 - TODO: hybrid search
+- TODO: proper speedtests
 ---
