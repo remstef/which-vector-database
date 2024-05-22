@@ -18,7 +18,7 @@ services:
       - IS_PERSISTENT=TRUE
       - ANONYMIZED_TELEMETRY=FALSE
     volumes:
-      - ${PWD}/dockerdata/chroma:/chroma/chroma
+      - ${PWD}/dockerdata/chroma__data:/chroma/chroma
     networks:
       net:
 
@@ -36,7 +36,7 @@ services:
     environment:
       - QDRANT__TELEMETRY_DISABLED=TRUE
     volumes:
-      - ${PWD}/dockerdata/qdrant:/qdrant/storage
+      - ${PWD}/dockerdata/qdrant__data:/qdrant/storage
     networks:
       net:
 
@@ -49,7 +49,7 @@ services:
       - POSTGRES_DB=root
       - PGDATA=/var/lib/postgresql/data/pgdata
     volumes:
-      - ${PWD}/dockerdata/pgdb:/var/lib/postgresql/data
+      - ${PWD}/dockerdata/pgdb__data:/var/lib/postgresql/data
     ports:
       - 55432:5432
     networks:
@@ -67,7 +67,7 @@ services:
       - POSTGRESQL_POSTGRES_PASSWORD=root
       - PARADEDB_TELEMETRY=false
     volumes:
-      - ${PWD}/dockerdata/paradedb:/bitnami/postgresql
+      - ${PWD}/dockerdata/paradedb__data:/bitnami/postgresql
     ports:
       - 54322:5432
     networks:
@@ -83,8 +83,8 @@ services:
       - ETCD_DATA_DIR=/var/lib/milvus/etcd
       - COMMON_STORAGETYPE=local
     volumes:
-      - ${PWD}/dockerdata/milvus/data:/var/lib/milvus
-      - ${PWD}/dockerconfigs/milvus/embedEtcd.yaml:/milvus/configs/embedEtcd.yaml
+      - ${PWD}/dockerdata/milvus__data:/var/lib/milvus
+      - ${PWD}/dockerconfigs/milvus__config/embedEtcd.yaml:/milvus/configs/embedEtcd.yaml
     ports:
       - 19530:19530 # grpc or http
       # - 9091:9091 # metric collection, kubernetes, healtchecks
@@ -107,7 +107,7 @@ services:
     ports:
       - 6379:6379
     volumes:
-      - ${PWD}/dockerdata/redis:/data
+      - ${PWD}/dockerdata/redis__data:/data
     command: redis-server --databases 64 --save 60 1 --loglevel warning
     sysctls:
       net.core.somaxconn: 4096
@@ -120,7 +120,7 @@ services:
       - 8088:8080
       - 50051:50051
     volumes:
-      - ${PWD}/dockerdata/weaviate/data:/var/lib/weaviate
+      - ${PWD}/dockerdata/weaviate__data:/var/lib/weaviate
     environment:
       - QUERY_DEFAULTS_LIMIT=25
       - AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED=true
@@ -133,6 +133,48 @@ services:
       - ASYNC_INDEXING=true
     command: [ --host, 0.0.0.0, --port, '8080', --scheme, http ]
     restart: on-failure:0
+
+  elastic:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+    labels:
+      co.elastic.logs/module: elasticsearch
+    environment:
+      - ELASTIC_PASSWORD=letmein
+      - node.name=esnode01
+      - cluster.name=escluster01
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - xpack.security.enabled=true
+      # - http.host=0.0.0.0
+      # - transport.host=0.0.0.0
+      # - network.host=0.0.0.0
+    mem_limit: 2g # 1073741824 bytes == 1g, 2147483648 bytes == 2g
+    memswap_limit: 0
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    #   nofile:
+    #     soft: 131072
+    #     hard: 131072
+    #   nproc:
+    #     soft: -1
+    #     hard: -1
+    # cap_add:
+    #   - IPC_LOCK
+    volumes:
+      - ${PWD}/dockerdata/elastic__data:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+      - 9300:9300
+    healthcheck:
+      test: curl --silent --fail '0.0.0.0:9200/_cluster/health' || exit 1
+      interval: 5s
+      timeout: 2s
+      retries: 12
+    networks:
+      net:
+
   
 ###
 # Administration Interfaces
@@ -172,3 +214,22 @@ services:
     networks:
       net:
 
+  # for elasticsearch
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.13.4
+    labels:
+      co.elastic.logs/module: kibana
+    ports:
+      - 5601:5601
+    environment:
+     - SERVERNAME=kibana
+     - ELASTICSEARCH_HOSTS=http://elastic:9200
+     - ELASTICSEARCH_USERNAME=kibana_system
+     - ELASTICSEARCH_PASSWORD=letmein
+     - KIBANA_PASSWORD=letmein
+    mem_limit: 1g
+    networks:
+      net:
+    depends_on:
+      elastic:
+        condition: service_healthy
