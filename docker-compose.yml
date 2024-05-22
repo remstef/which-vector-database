@@ -168,7 +168,7 @@ services:
       - 9200:9200
       - 9300:9300
     healthcheck:
-      test: curl --silent --fail '0.0.0.0:9200/_cluster/health' || exit 1
+      test: curl --silent --fail 'http://elastic:letmein@0.0.0.0:9200/_cluster/health' || exit 1
       interval: 5s
       timeout: 2s
       retries: 12
