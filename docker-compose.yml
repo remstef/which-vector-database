@@ -10,7 +10,7 @@ networks:
 services:
 
   chroma:
-    image: chromadb/chroma
+    image: chromadb/chroma:0.4.24
     restart: always
     ports:
       - 8000:8000
@@ -23,7 +23,7 @@ services:
       net:
 
   qdrant:
-    image: qdrant/qdrant:latest
+    image: qdrant/qdrant:v1.9.0
     restart: always
     #container_name: qdrant
     ports:
@@ -76,7 +76,7 @@ services:
           - pdb
 
   milvus:
-    image: milvusdb/milvus:v2.4.1 # latest # v2.4.0
+    image: milvusdb/milvus:v2.4.1
     restart: always
     environment:
       - ETCD_USE_EMBED=true
@@ -203,7 +203,7 @@ services:
 
   # for redis
   rediscommander:
-    image: rediscommander/redis-commander:latest
+    image: rediscommander/redis-commander
     restart: always
     environment:
       REDIS_HOSTS: local0:redis:6379:0,local1:redis:6379:1,local2:redis:6379:2,
