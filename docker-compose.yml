@@ -40,6 +40,10 @@ services:
       - 6335
     environment:
       - QDRANT__TELEMETRY_DISABLED=TRUE
+      - QDRANT__STORAGE__ON_DISK_PAYLOAD=1
+      - QDRANT__STORAGE__HNSW_INDEX__ON_DISK=1
+      - QDRANT__STORAGE__OPTIMIZERS__MEMMAP_THRESHOLD_KB=0 # Maximum size (in KiloBytes) of vectors to store in-memory per segment.
+      - QDRANT__STORAGE__OPTIMIZERS__INDEXING_THRESHOLD_KB=0 # Maximum size (in KiloBytes) of vectors allowed for plain index. To explicitly disable vector indexing, set to `0`.
     volumes:
       - ${PWD}/dockerdata/qdrant__data:/qdrant/storage
     mem_limit: ${MEM}
@@ -118,6 +122,33 @@ services:
       retries: 3
       start_period: 90s
       timeout: 20s
+    mem_limit: ${MEM}
+    deploy:
+      resources:
+        limits:
+          memory: ${MEM}
+    networks:
+      net:
+
+  redisstack:
+    # image: redis/redis-stack # contains both Redis Stack server and RedisInsight. This container is best for local development because you can use RedisInsight to visualize your data.
+    image: redis/redis-stack-server # provides Redis Stack but excludes RedisInsight. This container is best for production deployment.
+    restart: always
+    ports:
+      - 6379:6379
+      - 8001:8001 # redis insights
+    environment:
+      - REDIS_ARGS="--requirepass redis-stack"
+      # - REDIS_ARGS: extra arguments for Redis
+      # - REDISEARCH_ARGS: arguments for RediSearch
+      # - REDISJSON_ARGS: arguments for RedisJSON
+      # - REDISGRAPH_ARGS: arguments for RedisGraph
+      # - REDISTIMESERIES_ARGS: arguments for RedisTimeSeries
+      # - REDISBLOOM_ARGS: arguments for RedisBloom
+    volumes:
+      - ${PWD}/dockerdata/redisstack__data:/data
+    sysctls:
+      net.core.somaxconn: 4096
     mem_limit: ${MEM}
     deploy:
       resources:
