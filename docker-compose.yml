@@ -76,6 +76,8 @@ services:
         aliases: 
           - db
 
+  # run once: "ALTER SYSTEM SET paradedb.pg_search_telemetry TO 'off';" 
+  # docker exec paradedb psql "postgresql://postgres:root@pdb" -c "ALTER SYSTEM SET paradedb.pg_search_telemetry TO 'off';"
   paradedb:
     image: paradedb/paradedb:16-v0.7.0
     restart: always
